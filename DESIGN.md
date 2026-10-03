@@ -7,8 +7,8 @@ Move's screen. Click the jog wheel and the cards run past with a wooden
 clatter that slows down with them, then stop on one with a single knock.
 The card fills the screen, centred, all of it. Click again for another.
 
-**Status:** design only, nothing built yet. The screen design is not chosen
-yet: ten candidates are mocked up live (see *Screen*). Written against
+**Status:** design only, nothing built yet. The screen is chosen (Static);
+its sound is not: four candidates are mocked up live (see *Sound*). Written against
 Schwung **v1.6.3** (`upstream/main`, fetched 2026-10-02).
 
 **Module ID:** `elusive-muse` · **component_type:** `audio_fx`
@@ -158,7 +158,8 @@ slows. The ticks still follow the same schedule.
 - **E · Static.** Each letter is a cell of live pixel static that thins out
   until the letter shows through.
 
-*Decision pending:* one of the Cipher variations, or *Still* as the fallback.
+**Chosen: E · Static.** The sound is being reconsidered to match it (see
+*Sound*).
 
 ## Sound
 
@@ -182,6 +183,24 @@ the mockups' Web Audio graph to C biquads:
 effect could make sound, and the reason this is no longer a MIDI effect.
 *Rejected:* playing the ticks as MIDI notes into the slot's synth. The sound
 would depend on whatever synth is loaded and wouldn't be wooden.
+
+**Sound for Static: four candidates**, live on the design canvas (E1–E4),
+because a wooden clatter doesn't fit pixels clearing. Each follows the same
+schedule, and each step also knows how far the static has cleared, using the
+same curve as the screen:
+
+- **E1 · Crackle.** Every step is a spray of tiny electric clicks that thins
+  as the static thins. It lands on a clean sine chime.
+- **E2 · Tuning.** A radio between stations: hiss for the whole spin, fading
+  as the static clears, while a tone drifts into tune underneath. Landing cuts
+  the hiss and leaves the tone ringing.
+- **E3 · Chatter.** A computer decoding: a short blip at a random pitch on
+  every step. The pitches narrow onto one note, and the card lands on it.
+- **E4 · Shimmer.** Small glassy notes from a wide pentatonic cloud that
+  gathers toward the middle, landing on a soft chord.
+
+All four use only noise, biquad filters, sine and triangle oscillators and
+envelopes, so they port to C like the wood. *Decision pending.*
 
 ## Control surface
 
