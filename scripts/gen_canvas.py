@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Builds src/canvas.js from page/canvas.src.js, the Tamzen fonts and the cards.
 
-The device loads one script, so the fonts and the 500 cards travel inside it
+The device loads one script, so the fonts and the 1,000 cards travel inside it
 as data. This fills the two placeholders in the source:
 
     /*@FONTS@*/null   the five Tamzen sizes, ASCII 32..126

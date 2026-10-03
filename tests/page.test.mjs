@@ -79,7 +79,7 @@ const { CARDS, W, H, MX, MY, KEEP } = base;
 
 /* --------------------------------------------------------------- cards -- */
 {
-    check(CARDS.length === 500, `500 cards, found ${CARDS.length}`);
+    check(CARDS.length === 1000, `1000 cards, found ${CARDS.length}`);
     check(new Set(CARDS).size === CARDS.length, "a card is repeated");
     const sizes = {};
     let worst = null;
@@ -122,23 +122,23 @@ const { CARDS, W, H, MX, MY, KEEP } = base;
 
 /* ---------------------------------------------------------------- deal -- */
 {
-    const r = rng(99), deck = { bag: null };
-    let cur = base.deal(deck, -1, 500, r), dealt = [cur];
-    for (let i = 0; i < 500 * 20 - 1; i++) {
-        const v = base.deal(deck, cur, 500, r);
+    const N = CARDS.length, r = rng(99), deck = { bag: null };
+    let cur = base.deal(deck, -1, N, r), dealt = [cur];
+    for (let i = 0; i < N * 20 - 1; i++) {
+        const v = base.deal(deck, cur, N, r);
         check(v !== cur, "dealt the card already on screen");
         dealt.push(v); cur = v;
     }
     let laps = 0;
     for (let l = 0; l < 20; l++) {
-        const lap = new Set(dealt.slice(l * 500, (l + 1) * 500));
-        if (lap.size === 500) laps++;
+        const lap = new Set(dealt.slice(l * N, (l + 1) * N));
+        if (lap.size === N) laps++;
     }
-    check(laps === 20, `every lap of 500 holds all 500 cards (${laps}/20 did)`);
+    check(laps === 20, `every lap of ${N} holds all ${N} cards (${laps}/20 did)`);
 
     /* A card on screen that did not come from the bag (restored, say). */
     const d2 = { bag: [3] };
-    check(base.deal(d2, 3, 500, rng(1)) !== 3, "re-dealt the card on screen from a one-card bag");
+    check(base.deal(d2, 3, CARDS.length, rng(1)) !== 3, "re-dealt the card on screen from a one-card bag");
 }
 
 /* ------------------------------------------------------------ schedule -- */

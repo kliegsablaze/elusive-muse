@@ -35,6 +35,9 @@ cp src/help.json   dist/elusive-muse/help.json
 # on the device (the host logs it and leaves the band empty), so check here.
 [ -s src/canvas.js ] || { echo "src/canvas.js missing: run scripts/gen_canvas.py" >&2; exit 1; }
 cp src/canvas.js   dist/elusive-muse/canvas.js
+# canvas.js carries Tamzen's glyphs as data. Its licence asks for nothing,
+# but the notice travels with the font all the same.
+cp fonts/tamzen/LICENSE dist/elusive-muse/LICENSE-tamzen.txt
 
 cd dist
 tar -czvf elusive-muse-module.tar.gz elusive-muse/

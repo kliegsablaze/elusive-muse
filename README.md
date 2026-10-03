@@ -1,6 +1,6 @@
 # Elusive Muse
 
-A Schwung audio effect for Ableton Move that draws a card from a deck of 500
+A Schwung audio effect for Ableton Move that draws a card from a deck of 1,000
 prompts, written in the spirit of Brian Eno and Peter Schmidt's *Oblique
 Strategies* (none of their cards are used). Click the jog wheel and the
 screen fills with pixel static and scattered glassy notes. The static clears into one card,
@@ -10,8 +10,15 @@ It is an audio effect: put it in a slot after a synth, and the slot's audio
 passes through untouched. Only its own notes are added, and a tap on Shift
 mutes them.
 
-Status: 0.1.0, built and tested on a computer, not yet run on a Move. See
-[DESIGN.md](DESIGN.md).
+Needs Schwung 1.6.2 or later. See [DESIGN.md](DESIGN.md) for how it works and
+why.
+
+## Use
+
+1. Add Elusive Muse to a slot's audio effects, after the synth.
+2. Its page shows the last card drawn. Click the jog wheel to enter the page.
+3. Click again to draw a card. A click while one is coming is ignored.
+4. Tap Shift to mute or unmute its notes (an M shows). Back leaves the page.
 
 ## Build and install
 

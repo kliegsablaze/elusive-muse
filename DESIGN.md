@@ -2,16 +2,16 @@
 
 One click, one card from the deck.
 
-Elusive Muse puts a deck of 500 short prompts on the Move's screen, written
+Elusive Muse puts a deck of 1,000 short prompts on the Move's screen, written
 for it in the spirit of Brian Eno and Peter Schmidt's *Oblique Strategies*.
 Click the jog wheel and the screen fills with pixel static
 while small glassy notes scatter and gather. The static thins letter by
 letter until one card shows through, and it lands on a soft chord. The card
 fills the screen, centred, all of it. Click again for another.
 
-**Status:** 0.1.0 built and tested on a computer (`tests/run.sh`), with an
-arm64 build that has not yet run on a Move. *Static* screen, *Shimmer* sound,
-Schwung's page bars with a small M for mute. Written against
+**Status:** 0.2.0, ready to release. 0.1.0 ran on a Move and worked as
+designed; 0.2.0 adds 500 cards. *Static* screen, *Shimmer* sound, Schwung's
+page bars with a small M for mute. Needs Schwung 1.6.2 or later. Written against
 Schwung **v1.6.3** (`upstream/main`, fetched 2026-10-02).
 
 **Module ID:** `elusive-muse` · **component_type:** `audio_fx`
@@ -22,7 +22,7 @@ Schwung **v1.6.3** (`upstream/main`, fetched 2026-10-02).
   is the inspiration. A deck of over 100 cards, each with a short instruction
   or cryptic remark. You draw one when you are stuck. The cards don't solve the
   problem. They send you looking somewhere you hadn't thought to look.
-  **None of their cards are used here**: the idea is theirs, the 500 texts are
+  **None of their cards are used here**: the idea is theirs, the 1,000 texts are
   new.
 - **The name.** A muse is where ideas come from, and an elusive one is one you
   can't summon on demand. The module doesn't summon her either: it draws a
@@ -30,19 +30,39 @@ Schwung **v1.6.3** (`upstream/main`, fetched 2026-10-02).
 
 ## Which deck
 
-**Our own 500 cards**, in `cards/elusive-muse.txt`, one per line. Written for
-this module in the spirit of the originals: short, open, sideways, and a
-little more about making music than Eno and Schmidt's are, with room for the
-body, the room and the day as well as the mix.
+**Our own 1,000 cards**, in `cards/elusive-muse.txt`, one per line, written
+for this module in the spirit of the originals in two batches:
+
+- **Lines 1–500, the working deck.** Short, open, sideways, and a little
+  more about making music than Eno and Schmidt's are: the mix, the
+  arrangement, the habits, with room for the body, the room and the day.
+- **Lines 501–1,000, the imagination deck** (0.2.0). Deliberately a
+  different register, so the second half is not more of the first: small
+  scenes ("A launderette at midnight"), stories ("Something terrible
+  happens in bar 17"), impossible materials ("The chord is made of glass.
+  Carry it carefully"), games and chance ("Open a book at random. Use the
+  first verb"), theatre, cinema, the sea, space, myth, physics, food and
+  play. Fewer instructions about the mix, more pictures to make one from.
+
+The two halves are shuffled together; the deck doesn't know which is which.
 
 How they were checked:
 
-- **Not the originals.** Every card was compared with all 195 cards of the
-  Condensed Edition (via [zzkt/oblique-strategies](https://github.com/zzkt/oblique-strategies),
-  commit `8d9f634`); one that came close ("Who is this for?") was rewritten.
-  The comparison is the only use of that text; none of it ships.
+- **Not the originals.** Every card was compared with the Eno and Schmidt
+  cards (via [zzkt/oblique-strategies](https://github.com/zzkt/oblique-strategies),
+  commit `8d9f634`): the Condensed Edition for the first batch, all five
+  editions (239 distinct cards) for the second. Cards that came close ("Who
+  is this for?"; "A photo finish" against "Is it finished?"; "Make the
+  obvious impossible" against "Into the impossible") were rewritten or
+  cut. The comparison is the only use of that text; none of it ships.
 - **No repeats.** No two cards are the same, and near-mirrored pairs ("Rest,
   then decide" / "Decide, then rest") were cut to one.
+- **The second batch is not the first again.** Each of its cards was
+  compared by shared words with all 500 of the first, then read: 673 were
+  written, and 173 cut for saying what a first-batch card already says
+  ("Slow a second down until it becomes a song" beside "Slow a sound until
+  it becomes a texture") or for crowding one picture (too many clocks,
+  teacups and hats), or simply for being the weaker of two.
 - **Every card fits the page whole** (see *Screen*). The longest is 57
   characters.
 
@@ -108,7 +128,7 @@ page still shows a card rather than a prompt.
 ## What a click does
 
 1. **The winner is dealt before the reel starts**, like dealing from a real
-   shuffled deck: you see every one of the 500 cards before any card repeats,
+   shuffled deck: you see every one of the 1,000 cards before any card repeats,
    and a reshuffle never deals the card already on screen.
    *Rejected:* letting the reel stop wherever its friction runs out. It looks
    the same, but the odds would follow the animation curve, and it can't
@@ -134,15 +154,15 @@ uses the largest font in which the whole card fits.
 
 The fonts are Tamzen bitmap fonts (free licence, already in
 `schwung/fonts/tamzen`) at 10×20, 8×16, 7×14, 6×12 and 5×9. Measured against
-all 500 cards in the 128×48 band, with 2 pixels at the sides and 1 at top
+all 1,000 cards in the 128×48 band, with 2 pixels at the sides and 1 at top
 and bottom, keeping the mute mark's corner clear:
 
 | Font | Cards |
 |---|---|
-| 10×20 | 113 |
-| 8×16 | 159 |
-| 7×14 | 224 |
-| 6×12 | 4 |
+| 10×20 | 166 |
+| 8×16 | 261 |
+| 7×14 | 561 |
+| 6×12 | 12 |
 
 Every card fits. The layout still falls back to 5×9, and then to 5×9 with
 lines up to 2 pixels closer, so a longer card added later fits too. A canvas script only gets the host's 5×7 font through
@@ -277,7 +297,7 @@ draft assumed the draw path had `ctx.shiftHeld()` and `ctx.setParam`):
 
 ```
 elusive-muse/
-  cards/elusive-muse.txt   the 500 cards, one per line
+  cards/elusive-muse.txt   the 1,000 cards, one per line
   fonts/tamzen/            the five Tamzen BDFs and their licence
   page/canvas.src.js       the page: onMidi / handleBack / drawPage
   src/
@@ -320,13 +340,15 @@ The DSP answers `chain_params` and `ui_hierarchy` with the same JSON as
    processing.~~ Bit-identical in the tests; still to hear on the Move.
 4. ~~Note and chord synthesis in C~~, still to compare by ear with the
    mockups.
-5. ~~Fonts, fit and centring, with tests against all 500 cards.~~
+5. ~~Fonts, fit and centring, with tests against every card.~~
 6. ~~Deal and spin schedule, with tests; the `spin` parameter carrying it.~~
 7. ~~The chosen spin animation.~~
-8. ~~`help.json`, README~~, catalog entry (see the legal note).
+8. ~~`help.json`, README~~, catalog entry (see *Releasing*).
+9. ~~500 more cards (0.2.0).~~
 
 Steps 3–8 were built before step 2 because the Move was not on the network
-that day. Step 2 is now the first run of the whole module.
+that day. ~~Step 2~~ then ran the whole module, 0.1.0, which worked as
+designed.
 
 ## Testing
 
@@ -341,9 +363,9 @@ that day. Step 2 is now the first run of the whole module.
   about −17 dBFS, eight spins back to back with the chords overlapping about
   −15 dBFS (the notes are random, so it varies a little).
 - **Page** (`page.test.mjs`, the real `src/canvas.js` driven the way the
-  host drives a page): all 500 cards fit and are centred to within a pixel,
-  stay inside the margins and out of the M's corner; 20 laps of the deck each
-  hold all 500 cards, and the card on screen is never dealt again; gaps never
+  host drives a page): all 1,000 cards fit and are centred to within a
+  pixel, stay inside the margins and out of the M's corner; 20 laps of the
+  deck each hold every card, and the card on screen is never dealt again; gaps never
   shrink; a spin lands on the dealt card and draws exactly the plain card; a
   click or jog mid-spin sends nothing; the Shift tap, and the three things
   that are not taps (a hold, Shift across a page change, Shift with a jog);
@@ -370,3 +392,42 @@ static first.
    Shift+jog out and back in: no toggle.
 6. Save the set muted, reload it: still muted.
 7. Note what the hint bar says inside the door.
+
+## Releasing
+
+Same two tracks as the rest of the fleet: `scripts/install.sh` puts a dev
+build on your Move and touches nothing else; `scripts/release.sh` is the only
+thing that reaches anyone else.
+
+`release.sh` refuses a dirty tree, an existing tag and a private repo, runs
+the suite, pushes `main`, then tags `v<version>` from `src/module.json`.
+The tag starts `.github/workflows/release.yml`, which checks the tag matches
+the version, runs the suite again, builds in `scripts/Dockerfile`, attaches
+`elusive-muse-module.tar.gz` to a GitHub release and commits `release.json`
+to `main`. Schwung Manager reads that file.
+
+**Once only**, the module needs an entry in Schwung's `module-catalog.json`
+(a pull request to `charlesvestal/schwung`):
+
+```json
+{
+  "id": "elusive-muse",
+  "name": "Elusive Muse",
+  "description": "Click the jog wheel and one of 1,000 original prompts, in the spirit of Oblique Strategies, comes out of pixel static with a few glassy notes. Audio passes through untouched",
+  "author": "kliegsablaze",
+  "component_type": "audio_fx",
+  "subcategory": "utility",
+  "github_repo": "kliegsablaze/elusive-muse",
+  "default_branch": "main",
+  "asset_name": "elusive-muse-module.tar.gz",
+  "min_host_version": "1.6.2"
+}
+```
+
+- **`min_host_version` 1.6.2:** `page_first`, and `extra_keys` on a page
+  with no knobs, both arrived in 1.6.2 (`page_plan.mjs`; `docs/MODULES.md`).
+  Enterable canvas pages arrived in 1.5.0.
+- **`subcategory` utility:** none of the audio-effect subcategories
+  describes a deck of prompts; Utility is the least wrong.
+- **The repo must be public:** Schwung Manager downloads anonymously.
+  Every card is original, so nothing stands in the way.
