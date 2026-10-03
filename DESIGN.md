@@ -8,11 +8,10 @@ clatter that slows down with them, then stop on one with a single knock.
 The card fills the screen, centred, all of it. Click again for another.
 
 **Status:** design only, nothing built yet. The screen design is not chosen
-yet: five candidates are mocked up live (see *Screen*). Written against
+yet: ten candidates are mocked up live (see *Screen*). Written against
 Schwung **v1.6.3** (`upstream/main`, fetched 2026-10-02).
 
-**Module ID:** `elusive-muse` · **component_type:** `midi_fx` (first in the
-slot's chain)
+**Module ID:** `elusive-muse` · **component_type:** `audio_fx`
 
 ## Lineage
 
@@ -37,23 +36,45 @@ and removes duplicates.
 control. The cards live in a plain text file next to the code, so you can swap
 the edition by replacing that file.
 
-## Why a MIDI effect, and what that means
+## Why an audio effect, and what that means
 
-It sits at the **front of the slot's chain**, as you asked. That way it is
-always one page away while you play, instead of in the Tools menu, which
-takes over the whole Move.
+It goes in one of the slot's **audio effect positions**, after the synth.
+That keeps it one page away while you play, instead of in the Tools menu,
+which takes over the whole Move.
 
-**MIDI passes through untouched.** A MIDI effect has to forward the notes it
-receives, and this one forwards every note unchanged, with nothing added and
-nothing removed. Putting it in a slot changes nothing about how that slot
-sounds or plays. That takes a tiny C pass-through (`dsp.so`), because the
-chain loads a MIDI effect's binary by that name (`chain_midi.c`).
+*Changed from the first draft, which made it a MIDI effect at the front of
+the chain.* A MIDI effect cannot make sound: its API (`midi_fx_api_v1.h`) has
+no audio output, so the ticks would have had to go through the host's
+sample-preview player, which is an untested route. An audio effect renders
+audio itself, so the ticks are mixed in by the module, sample-accurately,
+with the exact recipe from the mockups.
+
+**What it does to the slot's audio: nothing, apart from the ticks.** The
+incoming audio passes through untouched. The ticks are *added* to the slot's
+output, which has three consequences worth knowing:
+
+- they go through any effects after it in the slot, and follow the track's
+  volume (put it last in the slot if you want the ticks dry);
+- they are part of the track's sound, so resampling the track records them;
+- the slot must keep rendering through silence, or a tick with nothing else
+  playing would never sound. `capabilities.requires_continuous_processing`
+  does exactly that.
 
 **Its one page is a screen the module draws.** Schwung calls this a *canvas*
 page (`docs/CANVAS_PAGES.md`, `docs/MODULES.md` § `canvas`). Declared as
 `as_page` + `page_first` + `enterable` with `show_footer: false`, it is the
 page you land on, the host draws nothing over it, and the jog wheel and click
-go to the module. The only things on screen are the words.
+go to the module. The only things on screen are the words. Canvas pages on an
+audio effect are already proven upstream: `src/modules/audio_fx/widget-test`
+has one.
+
+**Screen and sound share one schedule.** On a click, the screen script works
+out the spin (the dealt card, how many steps, the time of each step) and sends
+the step times to the DSP once, as a parameter (`spin`). The DSP plays a tick
+at each time and the knock at the end, counting samples. The screen follows
+the same timestamps on its own clock. Both start within one parameter
+round-trip of each other, a few milliseconds. *To verify:* that a canvas
+script can set a parameter on its own module, and how quickly it arrives.
 
 **One extra click, and why.** An `enterable` page is a *door*: you land on it,
 and the **first click enters it**. After that, every click draws a card. Back
@@ -121,41 +142,46 @@ same centred, whole-card layout. What differs is how the spin looks:
 5. **Dust.** At speed, cards are only a scatter of lit pixels. The winner
    condenses out of the scatter.
 
-*Decision pending:* which design.
+**Second round: Cipher without the reel.** You liked Cipher but not the
+other cards flashing past. In these five, no other card ever appears: the
+winner's own text is scrambled from the first tick and resolves as the reel
+slows. The ticks still follow the same schedule.
+
+- **A · Decode.** Letters lock in reading order, left to right, line by line.
+- **B · Crack.** Letters lock in a random order, like a password being
+  cracked.
+- **C · Shapeshift.** The scramble keeps changing shape and size, borrowing
+  the shapes of other cards, so you can't guess the length. It snaps to the
+  winner's shape for the last four ticks.
+- **D · Flap.** A split-flap departure board: each letter flips through the
+  alphabet to its target, finishing left to right.
+- **E · Static.** Each letter is a cell of live pixel static that thins out
+  until the letter shows through.
+
+*Decision pending:* one of the Cipher variations, or *Still* as the fallback.
 
 ## Sound
 
-A **woody tick for every card that passes the window**, so the sound speeds
-up and slows down exactly as the reel does. Each tick is a little brighter
-when fast and a little louder as it slows. On landing there is one fuller,
-lower knock.
+A **woody tick for every step of the spin**, so the sound speeds up and slows
+down exactly as the screen does. Each tick is a little brighter when fast and
+a little louder as it slows, with a few percent of random pitch so the clatter
+doesn't sound like a machine gun. On landing there is one fuller, lower knock.
+The approved sound is the one in the design mockups.
 
-**A MIDI effect cannot make sound.** Its API (`midi_fx_api_v1.h`) has no audio
-output. So the sound does not come from the module's DSP. The screen script
-plays short pre-rendered WAV files through the host's preview player,
-`host_preview_play(path)` (`docs/API.md`). That player auditions samples in
-the file browser, and it plays through the Move's speakers and outputs. The
-module ships:
+It is synthesised, not sampled. Each hit is a 6 ms noise burst through three
+or four resonant band-pass filters, plus a short sine thump that drops in
+pitch. That is how a struck block of wood behaves, and it ports directly from
+the mockups' Web Audio graph to C biquads:
 
-- `sounds/tick-1.wav` … `tick-4.wav`: four slightly different wood ticks, used
-  in rotation so the clatter doesn't sound like a machine gun;
-- `sounds/land.wav`: the landing knock.
+| Hit | Resonances (Hz, Q) | Decay | Body |
+|---|---|---|---|
+| tick | 1180/14, 2650/11, 520/8, all ×(0.82 + 0.3·speed) | 50 ms | 210 Hz, 30 ms |
+| knock | 640/10, 1490/9, 300/7, 3100/12 | 200 ms | 120 Hz, 130 ms |
 
-They are synthesised, not sampled: a short noise burst through three or four
-resonant band-pass filters, which is how a struck block of wood behaves. The
-design canvas plays the same recipe live in the browser.
-
-*To verify on device*, before anything else is built:
-
-- that a canvas script can call `host_preview_play`;
-- how quickly a play starts, and whether a new play cuts the previous one off
-  (wanted) or is refused while one is playing (would break the fast ticks);
-- that the preview level is sensible next to the music.
-
-*If it doesn't work:* drop to fewer ticks (only the last eight or so, when the
-reel is slow enough), or accept silence. *Rejected:* playing the ticks as MIDI
-notes into the slot's synth. The sound would depend on whatever synth is
-loaded, wouldn't be wooden, and would be heard as part of your music.
+*Rejected:* WAV files through `host_preview_play`. That was the only way a MIDI
+effect could make sound, and the reason this is no longer a MIDI effect.
+*Rejected:* playing the ticks as MIDI notes into the slot's synth. The sound
+would depend on whatever synth is loaded and wouldn't be wooden.
 
 ## Control surface
 
@@ -172,15 +198,15 @@ One page, one control. No `ui_hierarchy` knobs, no parameters.
 ```
 elusive-muse/
   src/
-    module.json        component_type "midi_fx"; one canvas param: as_page, page_first, enterable, show_footer false
-    dsp/muse.c         MIDI pass-through, plugin API v2 (midi_fx_api_v1)
+    module.json        component_type "audio_fx"; requires_continuous_processing;
+                       one canvas param: as_page, page_first, enterable, show_footer false
+    dsp/muse.c         audio pass-through + tick/knock synth, audio_fx_api_v2; param "spin"
     canvas.js          canvas_overlay: onMidi / tick / draw / handleBack
     fonts.js           Tamzen glyph tables (5 sizes, ASCII only)
     strategies.txt     one card per line, copied verbatim from zzkt
-    sounds/*.wav       generated by scripts/make_sounds.py, committed
     help.json
   tests/run.sh
-  scripts/build.sh, scripts/install.sh, scripts/make_sounds.py
+  scripts/build.sh, scripts/install.sh
 ```
 
 - **Timing uses elapsed time, not frame counts.** The reel is a list of
@@ -199,23 +225,26 @@ elusive-muse/
 ## Build order
 
 1. Choose the screen design.
-2. **Device spike:** a throwaway canvas page that plays one WAV per jog click
-   and per jog turn, to answer the three sound questions above. Also check the
-   canvas frame rate on device.
-3. MIDI pass-through `dsp.so` and `module.json` with the canvas page, checking
-   the slot behaves exactly as without it.
-4. Fonts, fit and centring, with tests against all 195 cards.
-5. Deal and spin schedule, with tests.
-6. The chosen spin animation.
-7. Sounds (`make_sounds.py`) and their timing.
+2. **Device spike:** an audio effect whose canvas page sends a parameter on
+   each jog click, and a DSP that answers with a tick. This answers the one
+   open question (can a canvas set its own module's parameter, and how fast)
+   and checks the canvas frame rate on device.
+3. Audio pass-through, `module.json` with the canvas page, continuous
+   processing. Check the slot sounds exactly as without it.
+4. Tick and knock synthesis in C, compared by ear with the mockups.
+5. Fonts, fit and centring, with tests against all 195 cards.
+6. Deal and spin schedule, with tests; the `spin` parameter carrying it.
+7. The chosen spin animation.
 8. `help.json`, README, catalog entry (see the legal note).
 
 ## Testing
 
 `tests/run.sh`:
 
-- the MIDI pass-through returns every input message unchanged (compiled with
-  `-Wall -Wextra -Werror`, driven through the v2 API);
+- the audio pass-through is bit-identical when no spin is running (compiled
+  with `-Wall -Wextra -Werror`, driven through the v2 API);
+- after a `spin`, a tick starts at every step time, to the sample, and the
+  knock at the end; the output never clips;
 - every card fits the screen at some font size, and is centred to the pixel;
 - the reel always lands on the dealt card;
 - no card repeats within a lap of the deck, over many laps, and a reshuffle
@@ -223,6 +252,6 @@ elusive-muse/
 - the gaps between cards never shrink, and a spin lasts 2–3 s;
 - a click during a spin changes nothing.
 
-On hardware: put it first in a slot with a synth after it, and check the notes
-still play exactly as before. Enter the page, draw ten cards, click during a
+On hardware: put it in a slot after a synth and check the sound is unchanged
+until you draw. Enter the page, draw ten cards, click during a
 spin, and listen for whether the ticks keep up at full speed.
