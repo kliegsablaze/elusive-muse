@@ -1,0 +1,32 @@
+{
+  "id": "elusive-muse",
+  "name": "Elusive Muse",
+  "abbrev": "MUSE",
+  "version": "0.1.0",
+  "description": "Click the jog wheel to draw a card from 500 prompts, in the spirit of Oblique Strategies.",
+  "dsp": "elusive-muse.so",
+  "api_version": 2,
+  "component_type": "audio_fx",
+  "capabilities": {
+    "audio_in": true,
+    "audio_out": true,
+    "chainable": true,
+    "component_type": "audio_fx",
+    "requires_continuous_processing": true,
+    "chain_params": [
+      { "key": "mute", "name": "Mute", "type": "int", "min": 0, "max": 1, "default": 0 },
+      { "key": "card", "name": "Card", "type": "canvas", "canvas_script": "canvas.js",
+        "as_page": true, "page_first": true, "enterable": true, "show_value": false,
+        "extra_keys": ["mute"] }
+    ]
+  },
+  "ui_hierarchy": {
+    "levels": {
+      "root": {
+        "label": "Elusive Muse",
+        "knobs": [],
+        "params": [{ "key": "card" }]
+      }
+    }
+  }
+}

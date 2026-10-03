@@ -9,9 +9,9 @@ while small glassy notes scatter and gather. The static thins letter by
 letter until one card shows through, and it lands on a soft chord. The card
 fills the screen, centred, all of it. Click again for another.
 
-**Status:** design only, nothing built yet. Screen and sound are chosen
-(*Static* with the *Shimmer* sound, in Schwung's page bars with a small M for
-mute; see *Screen* and *Sound*). Written against
+**Status:** 0.1.0 built and tested on a computer (`tests/run.sh`), with an
+arm64 build that has not yet run on a Move. *Static* screen, *Shimmer* sound,
+Schwung's page bars with a small M for mute. Written against
 Schwung **v1.6.3** (`upstream/main`, fetched 2026-10-02).
 
 **Module ID:** `elusive-muse` · **component_type:** `audio_fx`
@@ -89,8 +89,8 @@ has one.
 out the spin (the dealt card, how many steps, the time of each step) and sends
 the step times to the DSP once, as a parameter (`spin`). The DSP plays a note
 at each time and the chord at the end, counting samples. The screen follows
-the same timestamps on its own clock. Both start within one parameter
-round-trip of each other, a few milliseconds. A page's hooks get
+the same timestamps on its own clock, started *after* the parameter call
+returns, so the two start within one parameter round-trip of each other. A page's hooks get
 `ctx.setParam`, scoped to the module's own slot (`shadow_ui.js`,
 `canvasPageHook`), so the route exists. *To verify on device:* how quickly
 the value arrives.
@@ -113,10 +113,13 @@ page still shows a card rather than a prompt.
    *Rejected:* letting the reel stop wherever its friction runs out. It looks
    the same, but the odds would follow the animation curve, and it can't
    promise no repeats.
-2. **The reel is built backwards to land on it.** It is the current card,
-   then 24–32 random cards, then the winner. The gap between cards grows from
-   30 ms to 380 ms along a steep curve, so the reel races and then crawls
-   through the last three or four cards. A spin takes about 2.5–3 s.
+2. **The spin is a list of 24–32 steps.** The gap between steps grows from
+   30 ms to 380 ms along a steep curve, so it races and then crawls through
+   the last three or four. A spin takes 2.7–3.6 s (measured over 2,000
+   spins). With *Static* chosen no other card is ever shown, so the steps
+   are only timing: the screen shows the winner's own letters as static from
+   the first step. *Changed:* the mockups built a reel of filler cards
+   backwards from the winner; the module doesn't need them.
 3. **It lands.** The winning card fills the screen.
 
 A **click during a spin is ignored.** *Rejected:* letting a click stop the
@@ -247,27 +250,54 @@ One page. No `ui_hierarchy` knobs.
 
 **Why Shift and not Mute.** On a page, Schwung hands the module only the jog
 turn and click (`page_controller.mjs`, `canvasPageMidi`); Mute never arrives.
-Shift doesn't arrive as an event either, but `ctx.shiftHeld()` can be asked on
-every frame. A *tap* is a press and release seen by the page with no jog turn
-or click in between, so the Shift+jog and Shift+click gestures pass untouched.
-The mute is a module parameter (`mute`) the page sets with `ctx.setParam`, so
-the DSP silences its notes and the setting is saved with the set.
+
+**How the Shift tap actually works** (corrected while building; the first
+draft assumed the draw path had `ctx.shiftHeld()` and `ctx.setParam`):
+
+- Shift arrives as no event. The page's draw function, `drawPage`, runs every
+  host tick, but its ctx can only draw (`frame_ctx.mjs`): no `shiftHeld`, no
+  `setParam`. So the page polls **`shadow_get_shift_held()`**, the host
+  global that `ctx.shiftHeld` itself calls. *Risk:* that global is the host's
+  internal, not a documented page API. If a later Schwung hides it, the tap
+  does nothing and everything else still works.
+- A *tap* is a press and release with nothing in between: no jog turn or
+  click (those reach `onMidi`, which spoils the tap), no gap in the frames
+  (Shift+jog paging away and Shift+click opening the picker both take the
+  screen), and no longer than 600 ms.
+- The draw path can't set a parameter, so the page keeps the `setParam` of
+  the last hook it was handed (`onMidi`, `handleBack`) and calls that.
+  Before the first click in a session there is none: the tap is remembered,
+  the M shows, and the `mute` goes out just ahead of the first `spin`, which
+  is the first moment a note could sound anyway.
+- `mute` is a module parameter, so it is saved with the set. The page reads
+  it back through `extra_keys`; its own tap wins for 1.5 s while the read
+  catches up, after which the DSP's value is the truth (a set was loaded).
 
 ## Implementation notes
 
 ```
 elusive-muse/
+  cards/elusive-muse.txt   the 500 cards, one per line
+  fonts/tamzen/            the five Tamzen BDFs and their licence
+  page/canvas.src.js       the page: onMidi / handleBack / drawPage
   src/
-    module.json        component_type "audio_fx"; requires_continuous_processing;
-                       one canvas param: as_page, page_first, enterable
-    dsp/muse.c         audio pass-through + note/chord synth, audio_fx_api_v2; params "spin", "mute"
-    canvas.js          canvas_overlay: onMidi / tick / draw / handleBack
-    fonts.js           Tamzen glyph tables (5 sizes, ASCII only)
-    cards.txt          the 500 cards (copied from cards/elusive-muse.txt)
+    module.json            audio_fx; requires_continuous_processing; params
+                           `mute` (int 0..1) and `card` (canvas: as_page,
+                           page_first, enterable, extra_keys [mute])
+    dsp/muse.c             pass-through + Shimmer synth, audio_fx_api_v2
+    canvas.js              GENERATED: the page with fonts and cards inside
     help.json
-  tests/run.sh
-  scripts/build.sh, scripts/install.sh
+  scripts/gen_canvas.py    builds src/canvas.js (--check: is it current?)
+  scripts/build.sh         arm64 .so + tarball (inside scripts/Dockerfile)
+  scripts/install.sh       stage, rename, restart, prove the new .so is mapped
+  tests/run.sh             test_muse.c, page.test.mjs, help_lint.mjs
 ```
+
+The device loads one script, so the fonts and cards travel inside
+`canvas.js` as data. `spin` is not declared as a parameter: declared ones
+are saved with the set, and a restored `spin` would play a spin on load.
+The DSP answers `chain_params` and `ui_hierarchy` with the same JSON as
+`module.json`; a test compares them.
 
 - **Timing uses elapsed time, not frame counts.** The reel is a list of
   timestamps, and each frame only asks which card is current. A slow frame
@@ -281,34 +311,62 @@ elusive-muse/
 
 ## Build order
 
-1. Choose the screen design.
+1. ~~Choose the screen design.~~
 2. **Device spike:** an audio effect whose canvas page sends a parameter on
    each jog click, and a DSP that answers with a note. This answers the one
    open question (can a canvas set its own module's parameter, and how fast)
    and checks the canvas frame rate on device.
-3. Audio pass-through, `module.json` with the canvas page, continuous
-   processing. Check the slot sounds exactly as without it.
-4. Note and chord synthesis in C, compared by ear with the mockups.
-5. Fonts, fit and centring, with tests against all 500 cards.
-6. Deal and spin schedule, with tests; the `spin` parameter carrying it.
-7. The chosen spin animation.
-8. `help.json`, README, catalog entry (see the legal note).
+3. ~~Audio pass-through, `module.json` with the canvas page, continuous
+   processing.~~ Bit-identical in the tests; still to hear on the Move.
+4. ~~Note and chord synthesis in C~~, still to compare by ear with the
+   mockups.
+5. ~~Fonts, fit and centring, with tests against all 500 cards.~~
+6. ~~Deal and spin schedule, with tests; the `spin` parameter carrying it.~~
+7. ~~The chosen spin animation.~~
+8. ~~`help.json`, README~~, catalog entry (see the legal note).
+
+Steps 3–8 were built before step 2 because the Move was not on the network
+that day. Step 2 is now the first run of the whole module.
 
 ## Testing
 
-`tests/run.sh`:
+`tests/run.sh` (all passing at 0.1.0):
 
-- the audio pass-through is bit-identical when no spin is running (compiled
-  with `-Wall -Wextra -Werror`, driven through the v2 API);
-- after a `spin`, a note starts at every step time, to the sample, and the
-  chord at the end; the output never clips;
-- every card fits the screen at some font size, and is centred to the pixel;
-- the reel always lands on the dealt card;
-- no card repeats within a lap of the deck, over many laps, and a reshuffle
-  never deals the card on screen;
-- the gaps between cards never shrink, and a spin lasts 2–3 s;
-- a click during a spin changes nothing.
+- **DSP** (`test_muse.c`, `-Wall -Wextra -Werror`, through the v2 API):
+  pass-through bit-identical with no spin and again after one has rung out;
+  every event fires at its sample (a test-build log, since a note starting at
+  1e-4 of its level rounds to silence for a while); muted, a spin changes
+  nothing; a mute silences within 6 ms; unmuting mid-spin resumes at the next
+  step; `state` restores; malformed spins are ignored. Peaks: one spin
+  about −17 dBFS, eight spins back to back with the chords overlapping about
+  −15 dBFS (the notes are random, so it varies a little).
+- **Page** (`page.test.mjs`, the real `src/canvas.js` driven the way the
+  host drives a page): all 500 cards fit and are centred to within a pixel,
+  stay inside the margins and out of the M's corner; 20 laps of the deck each
+  hold all 500 cards, and the card on screen is never dealt again; gaps never
+  shrink; a spin lands on the dealt card and draws exactly the plain card; a
+  click or jog mid-spin sends nothing; the Shift tap, and the three things
+  that are not taps (a hold, Shift across a page change, Shift with a jog);
+  the M follows the DSP's saved mute.
+- **Contract:** the DSP's `chain_params` and `ui_hierarchy` equal
+  `module.json`'s; `src/canvas.js` is current with its sources; help lines fit
+  20 characters.
 
-On hardware: put it in a slot after a synth and check the sound is unchanged
-until you draw. Enter the page, draw ten cards, click during a
-spin, and listen for whether the notes keep up at full speed.
+**Frame cost**, the number to watch on the Move: the static draws at most
+994 `fillRect` calls in a frame (one per horizontal run, not per pixel), and
+the page's own work takes about 60 µs per static frame in node. QuickJS on
+the Move's CPU will be many times slower; if the spin stutters, thin the
+static first.
+
+**On the Move** (step 2), in order:
+
+1. Put it in a slot after a synth: the sound is unchanged until you draw.
+2. Land on the page: the last card shows, header ELUSIVE MUSE / Card.
+3. Click to enter, click to draw: static, notes, the card, the chord. Do
+   the notes and pixels move together? (This answers how fast `setParam`
+   arrives.)
+4. Draw ten cards, clicking during a spin too.
+5. Tap Shift: the M shows and the next spin is silent. Tap again. Then
+   Shift+jog out and back in: no toggle.
+6. Save the set muted, reload it: still muted.
+7. Note what the hint bar says inside the door.

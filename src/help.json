@@ -1,0 +1,57 @@
+{
+  "title": "Elusive Muse",
+  "children": [
+    {
+      "title": "Overview",
+      "lines": [
+        "A deck of 500 short",
+        "prompts for when you",
+        "are stuck. Click and",
+        "one card comes out",
+        "of the static, with",
+        "a few glassy notes.",
+        "",
+        "Your audio passes",
+        "through untouched.",
+        "",
+        "In the spirit of",
+        "Oblique Strategies",
+        "by Brian Eno and",
+        "Peter Schmidt. All",
+        "the cards are new."
+      ]
+    },
+    {
+      "title": "Controls",
+      "lines": [
+        "Click: enter page",
+        "Click again: draw",
+        "  a card",
+        "Tap Shift: mute or",
+        "  unmute its notes",
+        "  (an M shows)",
+        "Back: leave page",
+        "",
+        "A click while the",
+        "card is coming is",
+        "ignored: the deck",
+        "chooses, not you."
+      ]
+    },
+    {
+      "title": "The deck",
+      "lines": [
+        "Cards are dealt like",
+        "a shuffled deck: you",
+        "see all 500 before",
+        "any card repeats.",
+        "",
+        "The notes go to the",
+        "effects after it in",
+        "the slot. Put it",
+        "last to keep them",
+        "dry."
+      ]
+    }
+  ]
+}
