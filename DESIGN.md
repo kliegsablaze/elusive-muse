@@ -3,12 +3,13 @@
 One click, one card from the deck.
 
 Elusive Muse puts Brian Eno and Peter Schmidt's *Oblique Strategies* on the
-Move's screen. Click the jog wheel and the cards run past with a wooden
-clatter that slows down with them, then stop on one with a single knock.
-The card fills the screen, centred, all of it. Click again for another.
+Move's screen. Click the jog wheel and the screen fills with pixel static
+while small glassy notes scatter and gather. The static thins letter by
+letter until one card shows through, and it lands on a soft chord. The card
+fills the screen, centred, all of it. Click again for another.
 
-**Status:** design only, nothing built yet. The screen is chosen (Static);
-its sound is not: four candidates are mocked up live (see *Sound*). Written against
+**Status:** design only, nothing built yet. Screen and sound are chosen
+(*Static* with the *Shimmer* sound, see *Screen* and *Sound*). Written against
 Schwung **v1.6.3** (`upstream/main`, fetched 2026-10-02).
 
 **Module ID:** `elusive-muse` · **component_type:** `audio_fx`
@@ -44,19 +45,19 @@ which takes over the whole Move.
 
 *Changed from the first draft, which made it a MIDI effect at the front of
 the chain.* A MIDI effect cannot make sound: its API (`midi_fx_api_v1.h`) has
-no audio output, so the ticks would have had to go through the host's
+no audio output, so the sound would have had to go through the host's
 sample-preview player, which is an untested route. An audio effect renders
-audio itself, so the ticks are mixed in by the module, sample-accurately,
+audio itself, so the notes are mixed in by the module, sample-accurately,
 with the exact recipe from the mockups.
 
-**What it does to the slot's audio: nothing, apart from the ticks.** The
-incoming audio passes through untouched. The ticks are *added* to the slot's
+**What it does to the slot's audio: nothing, apart from the notes.** The
+incoming audio passes through untouched. The notes are *added* to the slot's
 output, which has three consequences worth knowing:
 
 - they go through any effects after it in the slot, and follow the track's
-  volume (put it last in the slot if you want the ticks dry);
+  volume (put it last in the slot if you want the notes dry);
 - they are part of the track's sound, so resampling the track records them;
-- the slot must keep rendering through silence, or a tick with nothing else
+- the slot must keep rendering through silence, or a note with nothing else
   playing would never sound. `capabilities.requires_continuous_processing`
   does exactly that.
 
@@ -70,8 +71,8 @@ has one.
 
 **Screen and sound share one schedule.** On a click, the screen script works
 out the spin (the dealt card, how many steps, the time of each step) and sends
-the step times to the DSP once, as a parameter (`spin`). The DSP plays a tick
-at each time and the knock at the end, counting samples. The screen follows
+the step times to the DSP once, as a parameter (`spin`). The DSP plays a note
+at each time and the chord at the end, counting samples. The screen follows
 the same timestamps on its own clock. Both start within one parameter
 round-trip of each other, a few milliseconds. *To verify:* that a canvas
 script can set a parameter on its own module, and how quickly it arrives.
@@ -158,49 +159,48 @@ slows. The ticks still follow the same schedule.
 - **E · Static.** Each letter is a cell of live pixel static that thins out
   until the letter shows through.
 
-**Chosen: E · Static.** The sound is being reconsidered to match it (see
-*Sound*).
+**Chosen: E · Static.** No other card ever appears, so the spin's filler
+cards only exist as timing; the screen shows the winner from the first step.
 
 ## Sound
 
-A **woody tick for every step of the spin**, so the sound speeds up and slows
-down exactly as the screen does. Each tick is a little brighter when fast and
-a little louder as it slows, with a few percent of random pitch so the clatter
-doesn't sound like a machine gun. On landing there is one fuller, lower knock.
-The approved sound is the one in the design mockups.
+**Chosen: Shimmer** (board E4 on the design canvas). One small glassy note
+for **every step of the spin**, so the notes speed up and slow down exactly
+as the screen does. Each note is picked at random from a pentatonic scale on
+D. While the static is thick the notes are scattered over nearly three
+octaves; as it clears, the range gathers toward the middle and the notes get
+a little louder and ring a little longer. While the static is thick, about
+half the steps also get a faint breath of high noise. On landing, a soft
+four-note chord (D, A, D, F♯) rolls in over 90 ms and rings out.
 
-It is synthesised, not sampled. Each hit is a 6 ms noise burst through three
-or four resonant band-pass filters, plus a short sine thump that drops in
-pitch. That is how a struck block of wood behaves, and it ports directly from
-the mockups' Web Audio graph to C biquads:
+Each step knows how far the static has cleared using the **same curve as the
+screen** (`resolved(i, n)`), so the sound and the pixels thin out together.
 
-| Hit | Resonances (Hz, Q) | Decay | Body |
-|---|---|---|---|
-| tick | 1180/14, 2650/11, 520/8, all ×(0.82 + 0.3·speed) | 50 ms | 210 Hz, 30 ms |
-| knock | 640/10, 1490/9, 300/7, 3100/12 | 200 ms | 120 Hz, 130 ms |
+It is synthesised, using only sine oscillators, a noise burst through one
+band-pass filter, and attack-decay envelopes. It ports directly from the
+mockups' Web Audio graph to C:
+
+| Event | Recipe |
+|---|---|
+| step note | sine at a pentatonic degree k above/below D5 (587.3 Hz), k uniform in ±(4 + 10·(1−r)); attack 3 ms, level 0.07 + 0.05·r, decay 0.12 + 0.35·r s |
+| step breath | with probability 0.5·(1−r): 10 ms noise, band-pass 6 kHz Q 2, level 0.05 |
+| landing chord | sines 293.7, 440, 587.3, 740 Hz at levels 0.14, 0.10, 0.08, 0.05; 30 ms apart; attack 6 ms; decays 2.4, 2.1, 1.8, 1.5 s |
+
+*r* is how far the static has cleared, 0 to 1. Master level 0.55.
+
+*Rejected, first:* a **woody tick** per step and a knock on landing
+(resonant band-pass filters struck by a noise burst). It fitted a reel of
+cards sliding past, but not pixels clearing.
+*Rejected, second round* (all heard on the design canvas):
+- **Crackle:** a spray of tiny electric clicks that thins with the static,
+  landing on a sine chime.
+- **Tuning:** radio hiss fading while a tone drifts into tune.
+- **Chatter:** blips at random pitches narrowing onto one note.
 
 *Rejected:* WAV files through `host_preview_play`. That was the only way a MIDI
 effect could make sound, and the reason this is no longer a MIDI effect.
-*Rejected:* playing the ticks as MIDI notes into the slot's synth. The sound
-would depend on whatever synth is loaded and wouldn't be wooden.
-
-**Sound for Static: four candidates**, live on the design canvas (E1–E4),
-because a wooden clatter doesn't fit pixels clearing. Each follows the same
-schedule, and each step also knows how far the static has cleared, using the
-same curve as the screen:
-
-- **E1 · Crackle.** Every step is a spray of tiny electric clicks that thins
-  as the static thins. It lands on a clean sine chime.
-- **E2 · Tuning.** A radio between stations: hiss for the whole spin, fading
-  as the static clears, while a tone drifts into tune underneath. Landing cuts
-  the hiss and leaves the tone ringing.
-- **E3 · Chatter.** A computer decoding: a short blip at a random pitch on
-  every step. The pitches narrow onto one note, and the card lands on it.
-- **E4 · Shimmer.** Small glassy notes from a wide pentatonic cloud that
-  gathers toward the middle, landing on a soft chord.
-
-All four use only noise, biquad filters, sine and triangle oscillators and
-envelopes, so they port to C like the wood. *Decision pending.*
+*Rejected:* playing the notes as MIDI into the slot's synth. The sound would
+depend on whatever synth is loaded.
 
 ## Control surface
 
@@ -219,7 +219,7 @@ elusive-muse/
   src/
     module.json        component_type "audio_fx"; requires_continuous_processing;
                        one canvas param: as_page, page_first, enterable, show_footer false
-    dsp/muse.c         audio pass-through + tick/knock synth, audio_fx_api_v2; param "spin"
+    dsp/muse.c         audio pass-through + note/chord synth, audio_fx_api_v2; param "spin"
     canvas.js          canvas_overlay: onMidi / tick / draw / handleBack
     fonts.js           Tamzen glyph tables (5 sizes, ASCII only)
     strategies.txt     one card per line, copied verbatim from zzkt
@@ -245,12 +245,12 @@ elusive-muse/
 
 1. Choose the screen design.
 2. **Device spike:** an audio effect whose canvas page sends a parameter on
-   each jog click, and a DSP that answers with a tick. This answers the one
+   each jog click, and a DSP that answers with a note. This answers the one
    open question (can a canvas set its own module's parameter, and how fast)
    and checks the canvas frame rate on device.
 3. Audio pass-through, `module.json` with the canvas page, continuous
    processing. Check the slot sounds exactly as without it.
-4. Tick and knock synthesis in C, compared by ear with the mockups.
+4. Note and chord synthesis in C, compared by ear with the mockups.
 5. Fonts, fit and centring, with tests against all 195 cards.
 6. Deal and spin schedule, with tests; the `spin` parameter carrying it.
 7. The chosen spin animation.
@@ -262,8 +262,8 @@ elusive-muse/
 
 - the audio pass-through is bit-identical when no spin is running (compiled
   with `-Wall -Wextra -Werror`, driven through the v2 API);
-- after a `spin`, a tick starts at every step time, to the sample, and the
-  knock at the end; the output never clips;
+- after a `spin`, a note starts at every step time, to the sample, and the
+  chord at the end; the output never clips;
 - every card fits the screen at some font size, and is centred to the pixel;
 - the reel always lands on the dealt card;
 - no card repeats within a lap of the deck, over many laps, and a reshuffle
@@ -273,4 +273,4 @@ elusive-muse/
 
 On hardware: put it in a slot after a synth and check the sound is unchanged
 until you draw. Enter the page, draw ten cards, click during a
-spin, and listen for whether the ticks keep up at full speed.
+spin, and listen for whether the notes keep up at full speed.
