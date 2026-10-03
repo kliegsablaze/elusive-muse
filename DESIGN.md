@@ -9,8 +9,10 @@ while small glassy notes scatter and gather. The static thins letter by
 letter until one card shows through, and it lands on a soft chord. The card
 fills the screen, centred, all of it. Click again for another.
 
-**Status:** 0.2.0, ready to release. 0.1.0 ran on a Move and worked as
-designed; 0.2.0 adds 500 cards. *Static* screen, *Shimmer* sound, Schwung's
+**Status:** 0.2.0, released 2026-10-03 (catalog entry in
+[charlesvestal/schwung#608](https://github.com/charlesvestal/schwung/pull/608),
+not yet merged). 0.1.0 ran on a Move and worked as designed; 0.2.0 adds 500
+cards and is installed on the same Move. *Static* screen, *Shimmer* sound, Schwung's
 page bars with a small M for mute. Needs Schwung 1.6.2 or later. Written against
 Schwung **v1.6.3** (`upstream/main`, fetched 2026-10-02).
 
