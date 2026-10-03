@@ -63,6 +63,12 @@ How they were checked:
   ("Slow a second down until it becomes a song" beside "Slow a sound until
   it becomes a texture") or for crowding one picture (too many clocks,
   teacups and hats), or simply for being the weaker of two.
+- **Every card points at the music.** After a read-through on 2026-10-03,
+  85 second-batch cards were replaced: images with nothing to act on ("The
+  silence wears a hat"), smells and tastes, chores ("Water a plant"), and
+  cards that assume a lyric or a singer. Each replacement names something
+  to change (a sound, a rhythm, a part, the arrangement) and passed the same
+  checks against the other 915 and the Eno editions.
 - **Every card fits the page whole** (see *Screen*). The longest is 57
   characters.
 
@@ -159,10 +165,10 @@ and bottom, keeping the mute mark's corner clear:
 
 | Font | Cards |
 |---|---|
-| 10×20 | 166 |
-| 8×16 | 261 |
-| 7×14 | 561 |
-| 6×12 | 12 |
+| 10×20 | 155 |
+| 8×16 | 244 |
+| 7×14 | 588 |
+| 6×12 | 13 |
 
 Every card fits. The layout still falls back to 5×9, and then to 5×9 with
 lines up to 2 pixels closer, so a longer card added later fits too. A canvas script only gets the host's 5×7 font through
