@@ -2,8 +2,9 @@
 
 One click, one card from the deck.
 
-Elusive Muse puts Brian Eno and Peter Schmidt's *Oblique Strategies* on the
-Move's screen. Click the jog wheel and the screen fills with pixel static
+Elusive Muse puts a deck of 500 short prompts on the Move's screen, written
+for it in the spirit of Brian Eno and Peter Schmidt's *Oblique Strategies*.
+Click the jog wheel and the screen fills with pixel static
 while small glassy notes scatter and gather. The static thins letter by
 letter until one card shows through, and it lands on a soft chord. The card
 fills the screen, centred, all of it. Click again for another.
@@ -17,33 +18,37 @@ Schwung **v1.6.3** (`upstream/main`, fetched 2026-10-02).
 
 ## Lineage
 
-- **Eno & Schmidt, *Oblique Strategies*** (1975; editions in 1978, 1979, 1996).
-  A deck of over 100 cards, each with a short instruction or cryptic remark.
-  You draw one when you are stuck. The cards don't solve the problem. They
-  send you looking somewhere you hadn't thought to look.
-- **The source text** is [zzkt/oblique-strategies](https://github.com/zzkt/oblique-strategies)
-  (commit `8d9f634`). It holds each edition as a plain text file with one card
-  per line.
+- **Eno & Schmidt, *Oblique Strategies*** (1975; editions in 1978, 1979, 1996)
+  is the inspiration. A deck of over 100 cards, each with a short instruction
+  or cryptic remark. You draw one when you are stuck. The cards don't solve the
+  problem. They send you looking somewhere you hadn't thought to look.
+  **None of their cards are used here**: the idea is theirs, the 500 texts are
+  new.
 - **The name.** A muse is where ideas come from, and an elusive one is one you
   can't summon on demand. The module doesn't summon her either: it draws a
   card and leaves you to find the way.
 
 ## Which deck
 
-The **Condensed Edition** (`oblique-strategies-condensed.txt`, 195 cards). It
-merges all four published editions, adds entries from Eno's published diary,
-and removes duplicates.
+**Our own 500 cards**, in `cards/elusive-muse.txt`, one per line. Written for
+this module in the spirit of the originals: short, open, sideways, and a
+little more about making music than Eno and Schmidt's are, with room for the
+body, the room and the day as well as the mix.
 
-*Rejected for now:* choosing the edition. You asked for one page with one
-control. The cards live in a plain text file next to the code, so you can swap
-the edition by replacing that file.
+How they were checked:
 
-**Our own cards.** `cards/elusive-muse.txt` holds 100 new cards written for
-this module in the same spirit: short, open, sideways, a little more about
-making music than the originals are. They are original text, checked against
-the 195 so none repeats or closely paraphrases one, and every one fits the
-page whole (34 at 10×20, 27 at 8×16, 39 at 7×14). *Open:* whether they join
-the Eno/Schmidt deck as one shuffled pile or form a deck of their own.
+- **Not the originals.** Every card was compared with all 195 cards of the
+  Condensed Edition (via [zzkt/oblique-strategies](https://github.com/zzkt/oblique-strategies),
+  commit `8d9f634`); one that came close ("Who is this for?") was rewritten.
+  The comparison is the only use of that text; none of it ships.
+- **No repeats.** No two cards are the same, and near-mirrored pairs ("Rest,
+  then decide" / "Decide, then rest") were cut to one.
+- **Every card fits the page whole** (see *Screen*). The longest is 57
+  characters.
+
+*Changed:* the first draft used the Condensed Edition itself. *Rejected*
+because the texts are © Eno and Schmidt and published without a licence, so
+the module could never be shared.
 
 ## Why an audio effect, and what that means
 
@@ -103,7 +108,7 @@ page still shows a card rather than a prompt.
 ## What a click does
 
 1. **The winner is dealt before the reel starts**, like dealing from a real
-   shuffled deck: you see every one of the 195 cards before any card repeats,
+   shuffled deck: you see every one of the 500 cards before any card repeats,
    and a reshuffle never deals the card already on screen.
    *Rejected:* letting the reel stop wherever its friction runs out. It looks
    the same, but the odds would follow the animation curve, and it can't
@@ -126,20 +131,18 @@ uses the largest font in which the whole card fits.
 
 The fonts are Tamzen bitmap fonts (free licence, already in
 `schwung/fonts/tamzen`) at 10×20, 8×16, 7×14, 6×12 and 5×9. Measured against
-all 195 cards in the 128×48 band, with 2 pixels at the sides and 1 at top
+all 500 cards in the 128×48 band, with 2 pixels at the sides and 1 at top
 and bottom, keeping the mute mark's corner clear:
 
-| Font | Cards | Example |
-|---|---|---|
-| 10×20 | 68 | *Abandon desire* |
-| 8×16 | 30 | |
-| 7×14 | 57 | |
-| 6×12 | 23 | |
-| 5×9 | 16 | |
-| 5×9, lines 2 px closer | 1 | *Short circuit (example; …)*, 127 characters |
+| Font | Cards |
+|---|---|
+| 10×20 | 113 |
+| 8×16 | 159 |
+| 7×14 | 224 |
+| 6×12 | 4 |
 
-Every card fits. (On the full 128×64 screen the first count was 68/75/43/5/4;
-the shorter band pushes many cards down a size.) A canvas script only gets the host's 5×7 font through
+Every card fits. The layout still falls back to 5×9, and then to 5×9 with
+lines up to 2 pixels closer, so a longer card added later fits too. A canvas script only gets the host's 5×7 font through
 `ctx.print`, so Elusive Muse **carries its own fonts as data** and draws them
 with `fillRect`. That is the route the docs recommend, and `schwung-dr32`'s
 `browser.js` does the same.
@@ -184,7 +187,7 @@ bar says JOG PAGE · CLK ENTER outside and Schwung's own hints inside. While the
 module's sound is muted, a small **M** in Schwung's own 4×5 lettering sits in
 the card area's top-right corner (x 122–126, y 10–14) with one clear pixel
 around it. The corner is kept clear whether muted or not, so a card never
-moves when you mute: the three cards that would touch it drop one font size.
+moves when you mute: the two cards that would touch it drop one font size.
 *Rejected:* a module-written header (M on the right) and hint bar (CLK DRAW ·
 SHFT MUTE). Mocked up as *Wanted*; Schwung gives a page no way to write in
 either bar, so it needed a host change and a fork.
@@ -260,8 +263,7 @@ elusive-muse/
     dsp/muse.c         audio pass-through + note/chord synth, audio_fx_api_v2; params "spin", "mute"
     canvas.js          canvas_overlay: onMidi / tick / draw / handleBack
     fonts.js           Tamzen glyph tables (5 sizes, ASCII only)
-    strategies.txt     one card per line, copied verbatim from zzkt
-    cards.txt          our own 100 (from cards/elusive-muse.txt)
+    cards.txt          the 500 cards (copied from cards/elusive-muse.txt)
     help.json
   tests/run.sh
   scripts/build.sh, scripts/install.sh
@@ -274,12 +276,8 @@ elusive-muse/
   on a computer with a fixed random source.
 - **The deck position survives** closing and reopening the page, kept in the
   overlay's per-slot `state`, so the shuffled deck carries on where it was.
-- **The legal question, plainly.** The card texts are © Brian Eno and Peter
-  Schmidt. The zzkt repo publishes them with no licence. Using them on your own
-  Move is fine. Publishing the module to the public Schwung catalog would
-  redistribute copyrighted text, which is your decision to make before any
-  release. The GitHub repo is **private** until you decide. Our own 100 cards
-are not affected: a public build could ship those alone.
+- **Every text is original**, so nothing stops the module being published.
+  The repo is still private; making it public is your call.
 
 ## Build order
 
@@ -291,7 +289,7 @@ are not affected: a public build could ship those alone.
 3. Audio pass-through, `module.json` with the canvas page, continuous
    processing. Check the slot sounds exactly as without it.
 4. Note and chord synthesis in C, compared by ear with the mockups.
-5. Fonts, fit and centring, with tests against all 195 cards.
+5. Fonts, fit and centring, with tests against all 500 cards.
 6. Deal and spin schedule, with tests; the `spin` parameter carrying it.
 7. The chosen spin animation.
 8. `help.json`, README, catalog entry (see the legal note).
