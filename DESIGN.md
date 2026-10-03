@@ -9,7 +9,8 @@ letter until one card shows through, and it lands on a soft chord. The card
 fills the screen, centred, all of it. Click again for another.
 
 **Status:** design only, nothing built yet. Screen and sound are chosen
-(*Static* with the *Shimmer* sound, see *Screen* and *Sound*). Written against
+(*Static* with the *Shimmer* sound, in Schwung's page bars with a small M for
+mute; see *Screen* and *Sound*). Written against
 Schwung **v1.6.3** (`upstream/main`, fetched 2026-10-02).
 
 **Module ID:** `elusive-muse` · **component_type:** `audio_fx`
@@ -37,6 +38,13 @@ and removes duplicates.
 control. The cards live in a plain text file next to the code, so you can swap
 the edition by replacing that file.
 
+**Our own cards.** `cards/elusive-muse.txt` holds 100 new cards written for
+this module in the same spirit: short, open, sideways, a little more about
+making music than the originals are. They are original text, checked against
+the 195 so none repeats or closely paraphrases one, and every one fits the
+page whole (34 at 10×20, 27 at 8×16, 39 at 7×14). *Open:* whether they join
+the Eno/Schmidt deck as one shuffled pile or form a deck of their own.
+
 ## Why an audio effect, and what that means
 
 It goes in one of the slot's **audio effect positions**, after the synth.
@@ -63,9 +71,12 @@ output, which has three consequences worth knowing:
 
 **Its one page is a screen the module draws.** Schwung calls this a *canvas*
 page (`docs/CANVAS_PAGES.md`, `docs/MODULES.md` § `canvas`). Declared as
-`as_page` + `page_first` + `enterable` with `show_footer: false`, it is the
-page you land on, the host draws nothing over it, and the jog wheel and click
-go to the module. The only things on screen are the words. Canvas pages on an
+`as_page` + `page_first` + `enterable`, it is the page you land on, and once
+entered the jog wheel and click go to the module. **Schwung keeps its own top
+and bottom bars on a page** (`render_page_movy.mjs`: the module draws only the
+band between them, rows 9–56); `show_footer: false` only applies to a
+full-screen canvas. So the card gets 128×48 pixels, with Schwung's header
+(module name, page name) above and its hint bar below. Canvas pages on an
 audio effect are already proven upstream: `src/modules/audio_fx/widget-test`
 has one.
 
@@ -74,8 +85,10 @@ out the spin (the dealt card, how many steps, the time of each step) and sends
 the step times to the DSP once, as a parameter (`spin`). The DSP plays a note
 at each time and the chord at the end, counting samples. The screen follows
 the same timestamps on its own clock. Both start within one parameter
-round-trip of each other, a few milliseconds. *To verify:* that a canvas
-script can set a parameter on its own module, and how quickly it arrives.
+round-trip of each other, a few milliseconds. A page's hooks get
+`ctx.setParam`, scoped to the module's own slot (`shadow_ui.js`,
+`canvasPageHook`), so the route exists. *To verify on device:* how quickly
+the value arrives.
 
 **One extra click, and why.** An `enterable` page is a *door*: you land on it,
 and the **first click enters it**. After that, every click draws a card. Back
@@ -107,23 +120,26 @@ and the cards only work if you didn't choose them.
 
 ## Screen
 
-128×64 pixels, one colour. **Each card is centred and shown whole, with no
-scrolling.** That works because the type size follows the card: the module
+The card area is 128×48 pixels (rows 9–56; see above), one colour. **Each
+card is centred and shown whole, with no scrolling.** That works because the type size follows the card: the module
 uses the largest font in which the whole card fits.
 
 The fonts are Tamzen bitmap fonts (free licence, already in
 `schwung/fonts/tamzen`) at 10×20, 8×16, 7×14, 6×12 and 5×9. Measured against
-all 195 cards with a 4-pixel margin:
+all 195 cards in the 128×48 band, with 2 pixels at the sides and 1 at top
+and bottom, keeping the mute mark's corner clear:
 
 | Font | Cards | Example |
 |---|---|---|
 | 10×20 | 68 | *Abandon desire* |
-| 8×16 | 75 | |
-| 7×14 | 43 | |
-| 6×12 | 5 | |
-| 5×9 | 4 | *Short circuit (example; …)*, 127 characters |
+| 8×16 | 30 | |
+| 7×14 | 57 | |
+| 6×12 | 23 | |
+| 5×9 | 16 | |
+| 5×9, lines 2 px closer | 1 | *Short circuit (example; …)*, 127 characters |
 
-Every card fits. A canvas script only gets the host's 5×7 font through
+Every card fits. (On the full 128×64 screen the first count was 68/75/43/5/4;
+the shorter band pushes many cards down a size.) A canvas script only gets the host's 5×7 font through
 `ctx.print`, so Elusive Muse **carries its own fonts as data** and draws them
 with `fillRect`. That is the route the docs recommend, and `schwung-dr32`'s
 `browser.js` does the same.
@@ -161,6 +177,19 @@ slows. The ticks still follow the same schedule.
 
 **Chosen: E · Static.** No other card ever appears, so the spin's filler
 cards only exist as timing; the screen shows the winner from the first step.
+
+**Chosen: Schwung's bars as they are, with a small M** (board *Small M* on
+the design canvas). The header reads ELUSIVE MUSE and the page name; the hint
+bar says JOG PAGE · CLK ENTER outside and Schwung's own hints inside. While the
+module's sound is muted, a small **M** in Schwung's own 4×5 lettering sits in
+the card area's top-right corner (x 122–126, y 10–14) with one clear pixel
+around it. The corner is kept clear whether muted or not, so a card never
+moves when you mute: the three cards that would touch it drop one font size.
+*Rejected:* a module-written header (M on the right) and hint bar (CLK DRAW ·
+SHFT MUTE). Mocked up as *Wanted*; Schwung gives a page no way to write in
+either bar, so it needed a host change and a fork.
+*Rejected:* the full-screen canvas, which gets the whole screen and the Mute
+button but shows a single cell until clicked.
 
 ## Sound
 
@@ -204,13 +233,22 @@ depend on whatever synth is loaded.
 
 ## Control surface
 
-One page, one control. No `ui_hierarchy` knobs, no parameters.
+One page. No `ui_hierarchy` knobs.
 
 | Control | Behaviour |
 |---|---|
 | Jog click | First click enters the page. After that: spin and land on a new card, ignored while spinning. |
+| Shift tap | Mutes or unmutes the module's own sound (never the audio passing through). Shows the M. |
 | Back | Leaves the page (the host's door behaviour). |
-| Shift+jog | Pages out (the host's escape, not the module's). |
+| Shift+jog | Pages out (the host's escape, not the module's). Not a tap, so it never toggles mute. |
+
+**Why Shift and not Mute.** On a page, Schwung hands the module only the jog
+turn and click (`page_controller.mjs`, `canvasPageMidi`); Mute never arrives.
+Shift doesn't arrive as an event either, but `ctx.shiftHeld()` can be asked on
+every frame. A *tap* is a press and release seen by the page with no jog turn
+or click in between, so the Shift+jog and Shift+click gestures pass untouched.
+The mute is a module parameter (`mute`) the page sets with `ctx.setParam`, so
+the DSP silences its notes and the setting is saved with the set.
 
 ## Implementation notes
 
@@ -218,11 +256,12 @@ One page, one control. No `ui_hierarchy` knobs, no parameters.
 elusive-muse/
   src/
     module.json        component_type "audio_fx"; requires_continuous_processing;
-                       one canvas param: as_page, page_first, enterable, show_footer false
-    dsp/muse.c         audio pass-through + note/chord synth, audio_fx_api_v2; param "spin"
+                       one canvas param: as_page, page_first, enterable
+    dsp/muse.c         audio pass-through + note/chord synth, audio_fx_api_v2; params "spin", "mute"
     canvas.js          canvas_overlay: onMidi / tick / draw / handleBack
     fonts.js           Tamzen glyph tables (5 sizes, ASCII only)
     strategies.txt     one card per line, copied verbatim from zzkt
+    cards.txt          our own 100 (from cards/elusive-muse.txt)
     help.json
   tests/run.sh
   scripts/build.sh, scripts/install.sh
@@ -239,7 +278,8 @@ elusive-muse/
   Schmidt. The zzkt repo publishes them with no licence. Using them on your own
   Move is fine. Publishing the module to the public Schwung catalog would
   redistribute copyrighted text, which is your decision to make before any
-  release. The GitHub repo is **private** until you decide.
+  release. The GitHub repo is **private** until you decide. Our own 100 cards
+are not affected: a public build could ship those alone.
 
 ## Build order
 
